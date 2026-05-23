@@ -26,7 +26,8 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QSpinBox, QMessageBox
 from qgis.core import (
     QgsProject, QgsVectorLayer, QgsField, QgsFeature, QgsGeometry,
-    QgsJsonUtils, QgsMessageLog, Qgis, QgsApplication, QgsTask
+    QgsJsonUtils, QgsMessageLog, Qgis, QgsApplication, QgsTask,
+    QgsLineSymbol, QgsSingleSymbolRenderer,
 )
 from .resources import *
 from .src.swot_dialog import QSWOTDialog
@@ -331,6 +332,9 @@ class QSWOT:
             for name in sorted(fields)
         ])
         layer.updateFields()
+
+        symbol = QgsLineSymbol.createSimple({'color': 'red', 'line_width': '0.6'})
+        layer.setRenderer(QgsSingleSymbolRenderer(symbol))
         return layer
 
     def _append_river_features(self, features):
@@ -381,7 +385,7 @@ class QSWOT:
         extent = layer.extent()
         if extent.isEmpty():
             return
-        extent.scale(20)
+        extent.scale(30)
         canvas = self.iface.mapCanvas()
         canvas.setExtent(extent)
         canvas.refresh()
