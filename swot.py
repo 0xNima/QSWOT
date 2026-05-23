@@ -311,6 +311,7 @@ class QSWOT:
                     return
 
         self.river_layer = self._build_river_layer(data['fields'])
+        self._river_zoomed = False
         QgsProject.instance().addMapLayer(self.river_layer)
 
         self.task = HydrocronMasterTask(
@@ -364,22 +365,26 @@ class QSWOT:
         layer.updateExtents()
         layer.triggerRepaint()
 
+        if not self._river_zoomed:
+            self._river_zoomed = True
+            self._zoom_to_layer(layer)
+
     def on_river_download_finished(self, features_data: Any):
         self.task = None
         layer = self.river_layer
         if layer is None or not QgsProject.instance().mapLayer(layer.id()):
             return
-
-        layer.updateExtents()
-        canvas = self.iface.mapCanvas()
-        canvas.setExtent(layer.extent())
-        canvas.refresh()
         self.iface.setActiveLayer(layer)
 
+    def _zoom_to_layer(self, layer):
+        layer.updateExtents()
+        extent = layer.extent()
+        if extent.isEmpty():
+            return
+        extent.scale(20)
         canvas = self.iface.mapCanvas()
-        canvas.setExtent(layer.extent())
+        canvas.setExtent(extent)
         canvas.refresh()
-
         self.iface.setActiveLayer(layer)
 
     @staticmethod
