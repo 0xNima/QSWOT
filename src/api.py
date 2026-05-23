@@ -1,11 +1,53 @@
-import requests
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsTask, QgsMessageLog, Qgis
+from urllib.parse import quote
+from qgis.PyQt.QtCore import pyqtSignal, QUrl, QUrlQuery
+from qgis.PyQt.QtNetwork import QNetworkRequest
+from qgis.core import (
+    QgsBlockingNetworkRequest, QgsTask, QgsMessageLog, Qgis,
+)
 from typing import Optional, Iterable, List, Callable
 
 
 MAX_WORKERS = 8
+
+
+def _http_get(url, params, timeout_ms):
+    """Synchronous GET via QgsBlockingNetworkRequest.
+
+    Returns (body_text, status_code_or_None, network_error_msg_or_None).
+    network_error_msg is only set for transport-level failures (DNS, connection,
+    timeout). HTTP 4xx/5xx are reported via status_code with body intact, so the
+    caller can extract a server-provided error message.
+    """
+    qurl = QUrl(url)
+    query = QUrlQuery()
+    for k, v in params.items():
+        query.addQueryItem(str(k), str(v))
+    qurl.setQuery(query)
+
+    request = QNetworkRequest(qurl)
+    request.setTransferTimeout(timeout_ms)
+
+    blocking = QgsBlockingNetworkRequest()
+    err = blocking.get(request)
+    reply = blocking.reply()
+
+    status = None
+    body = ''
+    if reply is not None:
+        status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        body_ba = reply.content()
+        if body_ba:
+            body = bytes(body_ba).decode('utf-8', 'replace')
+
+    if err == QgsBlockingNetworkRequest.NetworkError:
+        msg = reply.errorString() if reply is not None else 'network error'
+        return body, status, msg or 'network error'
+    if err == QgsBlockingNetworkRequest.TimeoutError:
+        return body, status, 'request timed out'
+
+    return body, status, None
 
 
 class HydrocronMasterTask(QgsTask):
@@ -133,27 +175,26 @@ class HydrocronMasterTask(QgsTask):
     @staticmethod
     def _fetch_reach(url, base_params, rid):
         params = dict(base_params, feature_id=rid)
-        try:
-            resp = requests.get(url, params=params, timeout=30)
-        except Exception as e:
-            return None, f"request failed: {e}"
+        body, status, net_err = _http_get(url, params, timeout_ms=30000)
+        if net_err:
+            return None, f"request failed: {net_err}"
 
         try:
-            data = resp.json()
+            data = json.loads(body) if body else None
         except Exception:
             data = None
 
         api_msg = HydrocronMasterTask._extract_api_error(data)
 
-        if not resp.ok:
-            return None, f"HTTP {resp.status_code}: {api_msg or resp.reason}"
+        if status is None or not (200 <= int(status) < 300):
+            return None, f"HTTP {status}: {api_msg or 'unknown'}"
 
         if data is None:
-            return None, f"non-JSON response (HTTP {resp.status_code})"
+            return None, f"non-JSON response (HTTP {status})"
 
-        status = str(data.get('status', '')).strip()
-        if status and not status.startswith('200'):
-            return None, f"{status}: {api_msg or 'unknown'}"
+        api_status = str(data.get('status', '')).strip()
+        if api_status and not api_status.startswith('200'):
+            return None, f"{api_status}: {api_msg or 'unknown'}"
 
         try:
             return data['results']['geojson']['features'], None
@@ -172,7 +213,7 @@ class HydrocronMasterTask(QgsTask):
         return rest if sep and prefix.isdigit() else msg
 
     def fetch_paginated_ids(self):
-        base_url = f"https://fts.podaac.earthdata.nasa.gov/v1/rivers/{self.river_name}"
+        base_url = f"https://fts.podaac.earthdata.nasa.gov/v1/rivers/{quote(self.river_name)}"
         ids = set()
         raw_count = 0
         page = 1
@@ -186,12 +227,15 @@ class HydrocronMasterTask(QgsTask):
 
             params = {'page_number': page, 'page_size': max_page_size}
 
+            body, status, net_err = _http_get(base_url, params, timeout_ms=20000)
+            if net_err:
+                raise Exception(f"NASA API Error on page {page}: {net_err}")
+            if status is None or not (200 <= int(status) < 300):
+                raise Exception(f"NASA API Error on page {page}: HTTP {status}")
             try:
-                response = requests.get(base_url, params=params, timeout=20)
-                response.raise_for_status()
-                data = response.json()
+                data = json.loads(body)
             except Exception as e:
-                raise Exception(f"NASA API Error on page {page}: {str(e)}")
+                raise Exception(f"NASA API Error on page {page}: {e}")
 
             results = data.get('results', [])
             if not results:

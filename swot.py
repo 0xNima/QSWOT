@@ -29,8 +29,8 @@ from qgis.core import (
     QgsJsonUtils, QgsMessageLog, Qgis, QgsApplication, QgsTask
 )
 from .resources import *
-from .swot_dialog import QSWOTDialog
-from .api import HydrocronMasterTask
+from .src.swot_dialog import QSWOTDialog
+from .src.api import HydrocronMasterTask
 from functools import partial
 from typing import Any, Optional, List
 from datetime import date
@@ -222,7 +222,7 @@ class QSWOT:
             lake_name = self.dlg.lake_name.text()
 
             if all([river_name, lake_name]):
-                from .swot_dataset_dialog import QSWOTDatasetDialog
+                from .src.swot_dataset_dialog import QSWOTDatasetDialog
                 dset_dlg = QSWOTDatasetDialog()
                 dset_dlg.river_name.setText(f'{river_name} River')
                 dset_dlg.lake_name.setText(f'{lake_name} Lake')

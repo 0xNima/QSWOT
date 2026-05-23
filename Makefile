@@ -38,19 +38,19 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	swot.py swot_dialog.py
+	swot.py
 
 PLUGINNAME = swot
 
 PY_FILES = \
 	__init__.py \
-	swot.py swot_dialog.py
+	swot.py
 
-UI_FILES = swot_dialog_base.ui
+UI_FILES =
 
 EXTRAS = metadata.txt icon.png
 
-EXTRA_DIRS =
+EXTRA_DIRS = src
 
 COMPILED_RESOURCE_FILES = resources.py
 
