@@ -33,6 +33,7 @@ from .resources import *
 from .src.swot_dialog import QSWOTDialog
 from .src.api import HydrocronReachTask, HydrocronLakeTask
 from .src.swot_fields import field_type, coerce_value
+from .src.statistics_dialog import StatisticsDialog
 from functools import partial
 from typing import Any, Optional, List
 from datetime import date
@@ -214,6 +215,8 @@ class QSWOT:
         self.dlg.lake_fetch_all.toggled.connect(
             partial(self.on_fetch_all_changed, 'lake')
         )
+        self.dlg.river_statistics_btn.clicked.connect(self.open_river_statistics)
+        self.dlg.river_lake_btn.clicked.connect(self.open_lake_statistics)
 
         self.dlg.show()
 
@@ -473,6 +476,26 @@ class QSWOT:
         if layer is None or not QgsProject.instance().mapLayer(layer.id()):
             return
         self.iface.setActiveLayer(layer)
+
+    # ---- statistics dialogs --------------------------------------------
+
+    def open_river_statistics(self):
+        self.open_statistics_dialog(self.river_layer, "river")
+
+    def open_lake_statistics(self):
+        layer = self.lake_poly_layer or self.lake_point_layer
+        self.open_statistics_dialog(layer, "lake")
+
+    def open_statistics_dialog(self, layer, label):
+        if layer is None or not QgsProject.instance().mapLayer(layer.id()):
+            QMessageBox.information(
+                self.dlg,
+                "No data",
+                f"No {label} layer is loaded yet. "
+                f"Run a {label} fetch first, then open the statistics dialog.",
+            )
+            return
+        StatisticsDialog(layer, parent=self.dlg).exec_()
 
     def zoom_to_layer(self, layer):
         layer.updateExtents()

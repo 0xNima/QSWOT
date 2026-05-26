@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>StatisticsDialog</class>
+ <widget class="QDialog" name="StatisticsDialog">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>780</width><height>720</height></rect>
+  </property>
+  <property name="windowTitle"><string>Statistics</string></property>
+  <layout class="QVBoxLayout" name="main_layout">
+
+   <item>
+    <widget class="QLabel" name="header_label">
+     <property name="text"><string>Layer: —</string></property>
+     <property name="styleSheet"><string>font-weight: bold;</string></property>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QGroupBox" name="subset_group">
+     <property name="title"><string>Subset (applies to both tabs)</string></property>
+     <layout class="QVBoxLayout" name="subset_layout">
+      <item>
+       <widget class="QRadioButton" name="all_radio">
+        <property name="text"><string>All features</string></property>
+        <property name="checked"><bool>true</bool></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="selected_radio">
+        <property name="text"><string>Selected features only</string></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="filter_layout">
+        <item><widget class="QRadioButton" name="filter_radio">
+         <property name="text"><string>Filter (QGIS expression):</string></property>
+        </widget></item>
+        <item><widget class="QLineEdit" name="filter_edit">
+         <property name="placeholderText"><string>e.g.  "reach_q" = 0</string></property>
+        </widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QTabWidget" name="tabs">
+     <property name="currentIndex"><number>0</number></property>
+
+     <widget class="QWidget" name="ts_tab">
+      <attribute name="title"><string>Time Series</string></attribute>
+      <layout class="QVBoxLayout" name="ts_layout">
+       <item>
+        <layout class="QFormLayout" name="ts_form">
+         <item row="0" column="0"><widget class="QLabel"><property name="text"><string>Value (Y):</string></property></widget></item>
+         <item row="0" column="1"><widget class="QComboBox" name="ts_value_combo"/></item>
+         <item row="1" column="0"><widget class="QLabel"><property name="text"><string>Time (X):</string></property></widget></item>
+         <item row="1" column="1"><widget class="QComboBox" name="ts_time_combo"/></item>
+         <item row="2" column="0"><widget class="QLabel"><property name="text"><string>Group by:</string></property></widget></item>
+         <item row="2" column="1"><widget class="QComboBox" name="ts_group_combo"/></item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="ts_action_row">
+         <item><widget class="QCheckBox" name="ts_markers_check">
+          <property name="text"><string>Show markers</string></property>
+          <property name="checked"><bool>true</bool></property>
+         </widget></item>
+         <item><spacer><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+         <item><widget class="QPushButton" name="ts_plot_button">
+          <property name="text"><string>Plot</string></property>
+         </widget></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="ts_status_label">
+         <property name="text"><string>—</string></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="ts_plot_host">
+         <layout class="QVBoxLayout" name="ts_plot_layout"/>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+
+     <widget class="QWidget" name="corr_tab">
+      <attribute name="title"><string>Correlation</string></attribute>
+      <layout class="QVBoxLayout" name="corr_layout">
+       <item>
+        <layout class="QFormLayout" name="corr_form">
+         <item row="0" column="0"><widget class="QLabel"><property name="text"><string>X field:</string></property></widget></item>
+         <item row="0" column="1"><widget class="QComboBox" name="corr_x_combo"/></item>
+         <item row="1" column="0"><widget class="QLabel"><property name="text"><string>Y field:</string></property></widget></item>
+         <item row="1" column="1"><widget class="QComboBox" name="corr_y_combo"/></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="corr_method_group">
+         <property name="title"><string>Method</string></property>
+         <layout class="QHBoxLayout">
+          <item><widget class="QRadioButton" name="pearson_radio">
+           <property name="text"><string>Pearson</string></property>
+           <property name="checked"><bool>true</bool></property>
+          </widget></item>
+          <item><widget class="QRadioButton" name="spearman_radio">
+           <property name="text"><string>Spearman</string></property>
+          </widget></item>
+          <item><widget class="QRadioButton" name="kendall_radio">
+           <property name="text"><string>Kendall</string></property>
+          </widget></item>
+          <item><spacer><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="corr_action_row">
+         <item><widget class="QCheckBox" name="corr_regression_check">
+          <property name="text"><string>Show regression line</string></property>
+          <property name="checked"><bool>true</bool></property>
+         </widget></item>
+         <item><spacer><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+         <item><widget class="QPushButton" name="corr_compute_button">
+          <property name="text"><string>Compute</string></property>
+         </widget></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="corr_stats_label">
+         <property name="text"><string>r = —    p = —    n = —</string></property>
+         <property name="styleSheet"><string>font-weight: bold;</string></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="corr_plot_host">
+         <layout class="QVBoxLayout" name="corr_plot_layout"/>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons"><set>QDialogButtonBox::Close</set></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+
+ <connections>
+  <connection>
+   <sender>buttonBox</sender><signal>rejected()</signal>
+   <receiver>StatisticsDialog</receiver><slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>
