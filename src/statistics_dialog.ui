@@ -3,7 +3,10 @@
  <class>StatisticsDialog</class>
  <widget class="QDialog" name="StatisticsDialog">
   <property name="geometry">
-   <rect><x>0</x><y>0</y><width>780</width><height>720</height></rect>
+   <rect><x>0</x><y>0</y><width>900</width><height>900</height></rect>
+  </property>
+  <property name="minimumSize">
+   <size><width>700</width><height>700</height></size>
   </property>
   <property name="windowTitle"><string>Statistics</string></property>
   <layout class="QVBoxLayout" name="main_layout">
@@ -80,6 +83,15 @@
        </item>
        <item>
         <widget class="QWidget" name="ts_plot_host">
+         <property name="minimumSize">
+          <size><width>0</width><height>480</height></size>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>1</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
          <layout class="QVBoxLayout" name="ts_plot_layout"/>
         </widget>
        </item>
@@ -135,6 +147,15 @@
        </item>
        <item>
         <widget class="QWidget" name="corr_plot_host">
+         <property name="minimumSize">
+          <size><width>0</width><height>480</height></size>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>1</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
          <layout class="QVBoxLayout" name="corr_plot_layout"/>
         </widget>
        </item>

@@ -30,6 +30,34 @@ FORM_CLASS, _ = uic.loadUiType(
 _GROUP_FIELD_PREFERENCE = ('reach_id', 'lake_id', 'river_name', 'lake_name')
 _NO_GROUP = '(none)'
 
+_ZOOM_FACTOR = 1.2  # per scroll-wheel tick
+
+
+def _scroll_zoom(canvas, event):
+    """Zoom in/out on a matplotlib canvas centered on the cursor position.
+
+    Works on whichever axes the cursor is currently over, so a future
+    multi-panel figure would zoom only the panel under the mouse."""
+    ax = event.inaxes
+    if ax is None or event.xdata is None or event.ydata is None:
+        return
+    scale = _ZOOM_FACTOR if event.button == 'up' else 1.0 / _ZOOM_FACTOR
+
+    xdata, ydata = event.xdata, event.ydata
+    x_lo, x_hi = ax.get_xlim()
+    y_lo, y_hi = ax.get_ylim()
+    new_x_range = (x_hi - x_lo) / scale
+    new_y_range = (y_hi - y_lo) / scale
+
+    # Keep the point under the cursor stationary on screen.
+    rel_x = (xdata - x_lo) / (x_hi - x_lo) if x_hi != x_lo else 0.5
+    rel_y = (ydata - y_lo) / (y_hi - y_lo) if y_hi != y_lo else 0.5
+    ax.set_xlim(xdata - new_x_range * rel_x,
+                xdata + new_x_range * (1 - rel_x))
+    ax.set_ylim(ydata - new_y_range * rel_y,
+                ydata + new_y_range * (1 - rel_y))
+    canvas.draw_idle()
+
 
 class StatisticsDialog(QDialog, FORM_CLASS):
     """Tabbed stats dialog for SWOT vector layers: time series + correlation,
@@ -104,6 +132,10 @@ class StatisticsDialog(QDialog, FORM_CLASS):
         toolbar = NavigationToolbar(canvas, canvas.parentWidget())
         layout.addWidget(toolbar)
         layout.addWidget(canvas)
+        # Mouse-wheel zoom centered on cursor position.
+        canvas.mpl_connect(
+            'scroll_event', lambda evt, c=canvas: _scroll_zoom(c, evt)
+        )
         return canvas, figure
 
     # ---- shared subset state -------------------------------------------
