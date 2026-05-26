@@ -1,0 +1,11 @@
+{
+  "query": "caspian",
+  "count": 5,
+  "results": [
+    {"lake_id": "7250180012", "lake_name": "CASPIAN LAKE"},
+    {"lake_id": "2810003512", "lake_name": "CASPIAN SEA"},
+    {"lake_id": "2810003522", "lake_name": "CASPIAN SEA"},
+    {"lake_id": "2810004162;2810004152", "lake_name": "CASPIAN SEA"},
+    {"lake_id": "2810004212;2810004052", "lake_name": "CASPIAN SEA"}
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "status": "200 OK",
+  "time": 0.234,
+  "hits": 2,
+  "results": {
+    "csv": "",
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "id": "0",
+          "type": "Feature",
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [[7.5, 47.5], [7.6, 47.6]]
+          },
+          "properties": {
+            "reach_id": "23261000181",
+            "time_str": "2024-01-15T12:34:56Z",
+            "wse": 245.123,
+            "width": 180.5
+          }
+        },
+        {
+          "id": "1",
+          "type": "Feature",
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [[7.5, 47.5], [7.6, 47.6]]
+          },
+          "properties": {
+            "reach_id": "23261000181",
+            "time_str": "2024-01-25T03:21:18Z",
+            "wse": -999.0,
+            "width": 178.2
+          }
+        }
+      ]
+    }
+  }
+}
