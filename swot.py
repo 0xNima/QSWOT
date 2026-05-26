@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QMetaType, QDateTime, QDate
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDateTime, QDate
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QSpinBox, QMessageBox
 from qgis.core import (
@@ -32,20 +32,13 @@ from qgis.core import (
 from .resources import *
 from .src.swot_dialog import QSWOTDialog
 from .src.api import HydrocronReachTask, HydrocronLakeTask
+from .src.swot_fields import field_type, coerce_value
 from functools import partial
 from typing import Any, Optional, List
 from datetime import date
 
 import os.path
 import json
-
-
-TYPES = {
-    'reach_id': QMetaType.Type.QString,
-    'lake_id': QMetaType.Type.QString,
-    'wse': QMetaType.Type.Double,
-    'time': QMetaType.Type.QString,
-}
 
 
 class QSWOT:
@@ -399,7 +392,7 @@ class QSWOT:
     def add_fields(layer, fields):
         provider = layer.dataProvider()
         provider.addAttributes([
-            QgsField(name, TYPES.get(name, QMetaType.Type.QString))
+            QgsField(name, field_type(name))
             for name in sorted(fields)
         ])
         layer.updateFields()
@@ -447,7 +440,7 @@ class QSWOT:
             feat.setGeometry(geom)
             for name, value in (item.get('properties') or {}).items():
                 if name in field_names:
-                    feat.setAttribute(name, value)
+                    feat.setAttribute(name, coerce_value(name, value))
             out.append(feat)
         return out
 

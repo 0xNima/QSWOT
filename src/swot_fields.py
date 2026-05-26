@@ -1,3 +1,6 @@
+from qgis.PyQt.QtCore import QMetaType
+
+
 RIVER_FIELDS = [
     ("Time & Orbit", [
         ("time", "Time (UTC)", True, None),
@@ -225,3 +228,193 @@ LAKE_FIELDS = [
         ("granuleUR", "Granule UR", False, None),
     ]),
 ]
+
+
+TYPES = {
+    # Default for anything not listed below is QMetaType.Type.QString.
+    # Large IDs (SWORD reach_id, PLD lake_id, granule_uR, etc.) are kept as
+    # strings because they can exceed 32-bit integer range and we never do
+    # arithmetic on them. Same goes for ISO timestamp strings (time_str,
+    # range_start_time, …) — the numeric epoch versions are below.
+
+    # ---- Time (epoch seconds) -------------------------------------------
+    # Note: p_date_t0 is *not* here — it's an ISO datetime string, not epoch.
+    'time':        QMetaType.Type.Double,
+    'time_tai':    QMetaType.Type.Double,
+
+    # ---- Orbit / pass --------------------------------------------------
+    'cycle_id':    QMetaType.Type.Int,
+    'pass_id':     QMetaType.Type.Int,
+
+    # ---- WSE (reach & lake) --------------------------------------------
+    'wse':         QMetaType.Type.Double,
+    'wse_u':       QMetaType.Type.Double,
+    'wse_r_u':     QMetaType.Type.Double,
+    'wse_c':       QMetaType.Type.Double,
+    'wse_c_u':     QMetaType.Type.Double,
+    'wse_std':     QMetaType.Type.Double,
+
+    # ---- River slope ----------------------------------------------------
+    'slope':       QMetaType.Type.Double,
+    'slope_u':     QMetaType.Type.Double,
+    'slope_r_u':   QMetaType.Type.Double,
+    'slope2':      QMetaType.Type.Double,
+    'slope2_u':    QMetaType.Type.Double,
+    'slope2_r_u':  QMetaType.Type.Double,
+
+    # ---- River width ----------------------------------------------------
+    'width':       QMetaType.Type.Double,
+    'width_u':     QMetaType.Type.Double,
+    'width_c':     QMetaType.Type.Double,
+    'width_c_u':   QMetaType.Type.Double,
+
+    # ---- Area (reach & lake) -------------------------------------------
+    'area_total':  QMetaType.Type.Double,
+    'area_tot_u':  QMetaType.Type.Double,
+    'area_detct':  QMetaType.Type.Double,
+    'area_det_u':  QMetaType.Type.Double,
+    'area_wse':    QMetaType.Type.Double,
+    'd_x_area':    QMetaType.Type.Double,
+    'd_x_area_u':  QMetaType.Type.Double,
+
+    # ---- Geometry / topology -------------------------------------------
+    'p_lat':       QMetaType.Type.Double,
+    'p_lon':       QMetaType.Type.Double,
+    'node_dist':   QMetaType.Type.Double,
+    'loc_offset':  QMetaType.Type.Double,
+    'xtrk_dist':   QMetaType.Type.Double,
+    'geoid_hght':  QMetaType.Type.Double,
+    'geoid_slop':  QMetaType.Type.Double,
+    'p_dist_out':  QMetaType.Type.Double,
+    'p_length':    QMetaType.Type.Double,
+    'n_reach_up':  QMetaType.Type.Int,
+    'n_reach_dn':  QMetaType.Type.Int,
+    'p_n_nodes':   QMetaType.Type.Int,
+    'p_n_ch_max':  QMetaType.Type.Int,
+    'p_n_ch_mod':  QMetaType.Type.Int,
+
+    # ---- Lake-specific overlap / storage change ------------------------
+    # `overlap` is intentionally absent — Hydrocron returns it as a String of
+    # ';'-joined "<PLD_id>;<fraction>" pairs, not a single number.
+    'n_overlap':   QMetaType.Type.Int,
+    'ds1_l':       QMetaType.Type.Double,
+    'ds1_l_u':     QMetaType.Type.Double,
+    'ds1_q':       QMetaType.Type.Double,
+    'ds1_q_u':     QMetaType.Type.Double,
+    'ds2_l':       QMetaType.Type.Double,
+    'ds2_l_u':     QMetaType.Type.Double,
+    'ds2_q':       QMetaType.Type.Double,
+    'ds2_q_u':     QMetaType.Type.Double,
+
+    # ---- River discharge (per model: value, uncert., fraction, quality) -
+    'dschg_c':     QMetaType.Type.Double, 'dschg_c_u':    QMetaType.Type.Double,
+    'dschg_csf':   QMetaType.Type.Double, 'dschg_c_q':    QMetaType.Type.Int,
+    'dschg_gc':    QMetaType.Type.Double, 'dschg_gc_u':   QMetaType.Type.Double,
+    'dschg_gcsf':  QMetaType.Type.Double, 'dschg_gc_q':   QMetaType.Type.Int,
+    'dschg_m':     QMetaType.Type.Double, 'dschg_m_u':    QMetaType.Type.Double,
+    'dschg_msf':   QMetaType.Type.Double, 'dschg_m_q':    QMetaType.Type.Int,
+    'dschg_gm':    QMetaType.Type.Double, 'dschg_gm_u':   QMetaType.Type.Double,
+    'dschg_gmsf':  QMetaType.Type.Double, 'dschg_gm_q':   QMetaType.Type.Int,
+    'dschg_b':     QMetaType.Type.Double, 'dschg_b_u':    QMetaType.Type.Double,
+    'dschg_bsf':   QMetaType.Type.Double, 'dschg_b_q':    QMetaType.Type.Int,
+    'dschg_gb':    QMetaType.Type.Double, 'dschg_gb_u':   QMetaType.Type.Double,
+    'dschg_gbsf':  QMetaType.Type.Double, 'dschg_gb_q':   QMetaType.Type.Int,
+    'dschg_h':     QMetaType.Type.Double, 'dschg_h_u':    QMetaType.Type.Double,
+    'dschg_hsf':   QMetaType.Type.Double, 'dschg_h_q':    QMetaType.Type.Int,
+    'dschg_gh':    QMetaType.Type.Double, 'dschg_gh_u':   QMetaType.Type.Double,
+    'dschg_ghsf':  QMetaType.Type.Double, 'dschg_gh_q':   QMetaType.Type.Int,
+    'dschg_o':     QMetaType.Type.Double, 'dschg_o_u':    QMetaType.Type.Double,
+    'dschg_osf':   QMetaType.Type.Double, 'dschg_o_q':    QMetaType.Type.Int,
+    'dschg_go':    QMetaType.Type.Double, 'dschg_go_u':   QMetaType.Type.Double,
+    'dschg_gosf':  QMetaType.Type.Double, 'dschg_go_q':   QMetaType.Type.Int,
+    'dschg_s':     QMetaType.Type.Double, 'dschg_s_u':    QMetaType.Type.Double,
+    'dschg_ssf':   QMetaType.Type.Double, 'dschg_s_q':    QMetaType.Type.Int,
+    'dschg_gs':    QMetaType.Type.Double, 'dschg_gs_u':   QMetaType.Type.Double,
+    'dschg_gssf':  QMetaType.Type.Double, 'dschg_gs_q':   QMetaType.Type.Int,
+    'dschg_i':     QMetaType.Type.Double, 'dschg_i_u':    QMetaType.Type.Double,
+    'dschg_isf':   QMetaType.Type.Double, 'dschg_i_q':    QMetaType.Type.Int,
+    'dschg_gi':    QMetaType.Type.Double, 'dschg_gi_u':   QMetaType.Type.Double,
+    'dschg_gisf':  QMetaType.Type.Double, 'dschg_gi_q':   QMetaType.Type.Int,
+    'dschg_q_b':   QMetaType.Type.LongLong,   # bitflag — may exceed 32 bits
+    'dschg_gq_b':  QMetaType.Type.LongLong,
+    'p_maf':       QMetaType.Type.Double,
+
+    # ---- Radar metrics & atmospheric corrections -----------------------
+    'layovr_val':  QMetaType.Type.Double,
+    'dark_frac':   QMetaType.Type.Double,
+    'ice_clim_f':  QMetaType.Type.Int,
+    'ice_dyn_f':   QMetaType.Type.Int,
+    'partial_f':   QMetaType.Type.Int,
+    'n_good_nod':  QMetaType.Type.Int,
+    'obs_frac_n':  QMetaType.Type.Double,
+    'xovr_cal_q':  QMetaType.Type.Int,
+    'solid_tide':  QMetaType.Type.Double,
+    'load_tidef':  QMetaType.Type.Double,
+    'load_tideg':  QMetaType.Type.Double,
+    'pole_tide':   QMetaType.Type.Double,
+    'dry_trop_c':  QMetaType.Type.Double,
+    'wet_trop_c':  QMetaType.Type.Double,
+    'iono_c':      QMetaType.Type.Double,
+    'xovr_cal_c':  QMetaType.Type.Double,
+
+    # ---- Quality flags --------------------------------------------------
+    'reach_q':     QMetaType.Type.Int,
+    'reach_q_b':   QMetaType.Type.LongLong,
+    'quality_f':   QMetaType.Type.Int,
+    'qual_f_b':    QMetaType.Type.LongLong,
+    'p_low_slp':   QMetaType.Type.Int,
+    'p_dam_id':    QMetaType.Type.Int,    # per RiverSP shapefile schema
+
+    # ---- Prior values (SWORD river side) -------------------------------
+    'p_wse':       QMetaType.Type.Double,
+    'p_wse_var':   QMetaType.Type.Double,
+    'p_width':     QMetaType.Type.Double,
+    'p_wid_var':   QMetaType.Type.Double,
+
+    # ---- Prior values (PLD lake side per Hydrocron API) ----------------
+    # `p_res_id` and `p_date_t0` are strings → default QString, not listed.
+    'p_ref_wse':   QMetaType.Type.Double,
+    'p_ref_area':  QMetaType.Type.Double,
+    'p_ds_t0':     QMetaType.Type.Double,
+    'p_storage':   QMetaType.Type.Double,
+}
+
+
+def field_type(name):
+    """Return the QMetaType for a Hydrocron field, defaulting to QString."""
+    return TYPES.get(name, QMetaType.Type.QString)
+
+
+_NUMERIC_TYPES = {QMetaType.Type.Double, QMetaType.Type.Int, QMetaType.Type.LongLong}
+_MISSING_SENTINELS = {'', 'no_data', 'NA', 'na', 'NaN', 'nan', 'null', 'None'}
+
+
+def coerce_value(name, value):
+    """Convert a raw Hydrocron property value to something the QGIS field for
+    `name` can actually store.
+
+    Returns NULL (None) for numeric fields whose value is one of:
+      - the SWOT-side 'no_data' / 'NaN' / '' sentinel,
+      - a ';'-joined merged-observation value (e.g. 'overlap' = '76;1' across
+        two PLD lakes — no single number applies),
+      - any string that isn't parseable to the target numeric type.
+    String fields are passed through unchanged.
+    """
+    if value is None:
+        return None
+    qt = field_type(name)
+    if qt not in _NUMERIC_TYPES:
+        return value
+    if isinstance(value, (int, float)):
+        return value
+    if not isinstance(value, str):
+        return None
+    s = value.strip()
+    if s in _MISSING_SENTINELS or ';' in s:
+        return None
+    try:
+        if qt == QMetaType.Type.Double:
+            return float(s)
+        return int(s)  # Int / LongLong
+    except (ValueError, TypeError):
+        return None
