@@ -23,7 +23,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=flood, flow, hydraulics, network, network analysis, remote sensing, statistics
+tags=swot, hydrocron, altimetry, satellite altimetry, nasa, podaac, cnes, hydrology, hydraulics, rivers, lakes, water level, water surface elevation, discharge, time series, correlation, remote sensing, earth observation, statistics, web service
 
 homepage=https://github.com/0xNima/QSWOT
 category=Web
