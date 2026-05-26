@@ -12,3 +12,6 @@ class QSWOTDatasetDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         super(QSWOTDatasetDialog, self).__init__(parent)
         self.setupUi(self)
+
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)

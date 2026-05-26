@@ -27,11 +27,11 @@ from qgis.PyQt.QtWidgets import QAction, QSpinBox, QMessageBox
 from qgis.core import (
     QgsProject, QgsVectorLayer, QgsField, QgsFeature, QgsGeometry,
     QgsJsonUtils, QgsMessageLog, Qgis, QgsApplication, QgsTask,
-    QgsLineSymbol, QgsSingleSymbolRenderer,
+    QgsLineSymbol, QgsFillSymbol, QgsMarkerSymbol, QgsSingleSymbolRenderer,
 )
 from .resources import *
 from .src.swot_dialog import QSWOTDialog
-from .src.api import HydrocronMasterTask
+from .src.api import HydrocronReachTask, HydrocronLakeTask
 from functools import partial
 from typing import Any, Optional, List
 from datetime import date
@@ -42,6 +42,7 @@ import json
 
 TYPES = {
     'reach_id': QMetaType.Type.QString,
+    'lake_id': QMetaType.Type.QString,
     'wse': QMetaType.Type.Double,
     'time': QMetaType.Type.QString,
 }
@@ -82,8 +83,17 @@ class QSWOT:
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
 
-        self.task = None
+        self.river_task = None
+        self.lake_task = None
         self.river_layer = None
+        # Lakes: poly + point because Hydrocron returns both, and a memory
+        # layer can only hold one geometry type. Lazily added to the project.
+        self.lake_poly_layer = None
+        self.lake_point_layer = None
+        self._lake_poly_added = False
+        self._lake_point_added = False
+        self._river_zoomed = False
+        self._lake_zoomed = False
 
 
     # noinspection PyMethodMayBeStatic
@@ -227,8 +237,6 @@ class QSWOT:
                 dset_dlg = QSWOTDatasetDialog()
                 dset_dlg.river_name.setText(f'{river_name} River')
                 dset_dlg.lake_name.setText(f'{lake_name} Lake')
-                dset_dlg.show()
-
                 if dset_dlg.exec_():
                     if dset_dlg.river_name.isChecked():
                         feature_types |= river
@@ -280,12 +288,15 @@ class QSWOT:
         start_time_wdg = get('ts_start')
         end_time_wdg = get('ts_end')
 
+        name_key = 'river_name' if prefix == 'river' else 'lake_name'
+        ids_key = 'reach_ids' if prefix == 'river' else 'lake_ids'
+
         return {
-            'river_name': get('name').text(),
+            name_key: get('name').text(),
+            ids_key: [],
             'start_time': start_time_wdg.dateTime().toString("yyyy-MM-ddTHH:mm:ss'Z'"),
             'end_time': end_time_wdg.dateTime().toString("yyyy-MM-ddTHH:mm:ss'Z'"),
             'fields': fields,
-            'reach_ids': [],
             'start_time_ordinal': self.to_ordinal(start_time_wdg.date()),
             'end_time_ordinal': self.to_ordinal(end_time_wdg.date()),
             'limit': limit,
@@ -295,37 +306,97 @@ class QSWOT:
         if not (data := self.serialize('river')):
             return
 
-        if self.task:
-            if self.task.status() in [QgsTask.Queued, QgsTask.Running]:
-                reply = QMessageBox.question(
-                    self.dlg,
-                    "Task in Progress",
-                    "A download is already running. Would you like to stop it and start a new search?",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No
-                )
+        if not self.confirm_replace_task('river_task', "river download"):
+            return
 
-                if reply == QMessageBox.Yes:
-                    self.task.cancel()
-                    self.task = None
-                else:
-                    return
-
-        self.river_layer = self._build_river_layer(data['fields'])
+        self.river_layer = self.build_river_layer(data['fields'])
         self._river_zoomed = False
         QgsProject.instance().addMapLayer(self.river_layer)
 
-        self.task = HydrocronMasterTask(
+        self.river_task = HydrocronReachTask(
             description="Downloading Hydrocron Reaches",
             **data,
             callback=self.on_river_download_finished,
         )
-        self.task.features_ready.connect(self._append_river_features)
-        QgsApplication.taskManager().addTask(self.task)
+        self.river_task.features_ready.connect(self.append_river_features)
+        QgsApplication.taskManager().addTask(self.river_task)
 
-    def _build_river_layer(self, fields):
+    def process_lake(self):
+        if not (data := self.serialize('lake')):
+            return
+
+        if not self.confirm_replace_task('lake_task', "lake download"):
+            return
+
+        self.lake_poly_layer = self.build_lake_poly_layer(data['fields'])
+        self.lake_point_layer = self.build_lake_point_layer(data['fields'])
+        self._lake_poly_added = False
+        self._lake_point_added = False
+        self._lake_zoomed = False
+
+        self.lake_task = HydrocronLakeTask(
+            description="Downloading Hydrocron Lakes",
+            **data,
+            callback=self.on_lake_download_finished,
+        )
+        self.lake_task.features_ready.connect(self.append_lake_features)
+        QgsApplication.taskManager().addTask(self.lake_task)
+
+    def confirm_replace_task(self, attr_name, label):
+        existing = getattr(self, attr_name)
+        if not existing:
+            return True
+        if existing.status() not in [QgsTask.Queued, QgsTask.Running]:
+            return True
+        reply = QMessageBox.question(
+            self.dlg,
+            "Task in Progress",
+            f"A {label} is already running. Would you like to stop it and start a new search?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return False
+        existing.cancel()
+        setattr(self, attr_name, None)
+        return True
+
+    def build_river_layer(self, fields):
         uri = "LineString?crs=EPSG:4326&index=yes"
         layer = QgsVectorLayer(uri, "Hydrocron Reaches", "memory")
+        self.add_fields(layer, fields)
+        symbol = QgsLineSymbol.createSimple({'color': 'red', 'line_width': '0.6'})
+        layer.setRenderer(QgsSingleSymbolRenderer(symbol))
+        return layer
+
+    def build_lake_poly_layer(self, fields):
+        layer = QgsVectorLayer(
+            "MultiPolygon?crs=EPSG:4326&index=yes", "Hydrocron Lakes", "memory"
+        )
+        self.add_fields(layer, fields)
+        symbol = QgsFillSymbol.createSimple({
+            'color': '80,150,255,120',          # translucent blue fill
+            'outline_color': '20,80,180',
+            'outline_width': '0.4',
+        })
+        layer.setRenderer(QgsSingleSymbolRenderer(symbol))
+        return layer
+
+    def build_lake_point_layer(self, fields):
+        layer = QgsVectorLayer(
+            "Point?crs=EPSG:4326&index=yes", "Hydrocron Lakes (Points)", "memory"
+        )
+        self.add_fields(layer, fields)
+        symbol = QgsMarkerSymbol.createSimple({
+            'name': 'circle',
+            'color': '20,80,180',
+            'size': '2.5',
+        })
+        layer.setRenderer(QgsSingleSymbolRenderer(symbol))
+        return layer
+
+    @staticmethod
+    def add_fields(layer, fields):
         provider = layer.dataProvider()
         provider.addAttributes([
             QgsField(name, TYPES.get(name, QMetaType.Type.QString))
@@ -333,20 +404,37 @@ class QSWOT:
         ])
         layer.updateFields()
 
-        symbol = QgsLineSymbol.createSimple({'color': 'red', 'line_width': '0.6'})
-        layer.setRenderer(QgsSingleSymbolRenderer(symbol))
-        return layer
+    def append_river_features(self, features):
+        qgs = self.convert_features(self.river_layer, features)
+        self.flush_to_layer(self.river_layer, qgs, zoom_attr='_river_zoomed')
 
-    def _append_river_features(self, features):
-        layer = self.river_layer
-        if layer is None or not QgsProject.instance().mapLayer(layer.id()):
-            return
+    def append_lake_features(self, features):
+        poly_qgs = self.convert_features(self.lake_poly_layer, features, accept=('Polygon', 'MultiPolygon'))
+        point_qgs = self.convert_features(self.lake_point_layer, features, accept=('Point',))
 
+        # Lazy add to project so empty layers don't clutter the legend.
+        if poly_qgs and not self._lake_poly_added:
+            QgsProject.instance().addMapLayer(self.lake_poly_layer)
+            self._lake_poly_added = True
+        if point_qgs and not self._lake_point_added:
+            QgsProject.instance().addMapLayer(self.lake_point_layer)
+            self._lake_point_added = True
+
+        self.flush_to_layer(self.lake_poly_layer, poly_qgs, zoom_attr='_lake_zoomed')
+        self.flush_to_layer(self.lake_point_layer, point_qgs, zoom_attr='_lake_zoomed')
+
+    def convert_features(self, layer, items, accept=None):
+        """Parse GeoJSON items into QgsFeatures for `layer`, optionally
+        filtering by GeoJSON geometry type."""
+        if layer is None:
+            return []
         field_names = {f.name() for f in layer.fields()}
-        qgs_features = []
-        for item in features:
+        out = []
+        for item in items:
             geom_json = item.get('geometry')
             if not geom_json:
+                continue
+            if accept is not None and geom_json.get('type') not in accept:
                 continue
             geom = QgsJsonUtils.geometryFromGeoJson(json.dumps(geom_json))
             if geom.isNull():
@@ -355,32 +443,45 @@ class QSWOT:
                     level=Qgis.Warning,
                 )
                 continue
-
             feat = QgsFeature(layer.fields())
             feat.setGeometry(geom)
             for name, value in (item.get('properties') or {}).items():
                 if name in field_names:
                     feat.setAttribute(name, value)
-            qgs_features.append(feat)
+            out.append(feat)
+        return out
 
-        if not qgs_features:
+    def flush_to_layer(self, layer, qgs_features, zoom_attr):
+        if not qgs_features or layer is None:
+            return
+        if not QgsProject.instance().mapLayer(layer.id()):
             return
         layer.dataProvider().addFeatures(qgs_features)
         layer.updateExtents()
         layer.triggerRepaint()
-
-        if not self._river_zoomed:
-            self._river_zoomed = True
-            self._zoom_to_layer(layer)
+        if not getattr(self, zoom_attr):
+            setattr(self, zoom_attr, True)
+            self.zoom_to_layer(layer)
 
     def on_river_download_finished(self, features_data: Any):
-        self.task = None
-        layer = self.river_layer
+        self.river_task = None
+        self.activate_if_present(self.river_layer)
+
+    def on_lake_download_finished(self, features_data: Any):
+        self.lake_task = None
+        # Prefer activating the polygon layer; fall back to points if that's
+        # the only one with data.
+        if self._lake_poly_added:
+            self.activate_if_present(self.lake_poly_layer)
+        elif self._lake_point_added:
+            self.activate_if_present(self.lake_point_layer)
+
+    def activate_if_present(self, layer):
         if layer is None or not QgsProject.instance().mapLayer(layer.id()):
             return
         self.iface.setActiveLayer(layer)
 
-    def _zoom_to_layer(self, layer):
+    def zoom_to_layer(self, layer):
         layer.updateExtents()
         extent = layer.extent()
         if extent.isEmpty():
@@ -395,6 +496,3 @@ class QSWOT:
     def to_ordinal(q_date: QDate):
         py_date = date(q_date.year(), q_date.month(), q_date.day())
         return py_date.toordinal()
-
-    def process_lake(self):
-        data = self.serialize('lake')

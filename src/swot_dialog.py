@@ -40,10 +40,10 @@ class QSWOTDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         self.field_checkboxes = {'river': {}, 'lake': {}}
-        self._populate_field_tabs('river', self.river_query_fields_tabs, RIVER_FIELDS)
-        self._populate_field_tabs('lake', self.lake_query_fields_tabs, LAKE_FIELDS)
+        self.populate_field_tabs('river', self.river_query_fields_tabs, RIVER_FIELDS)
+        self.populate_field_tabs('lake', self.lake_query_fields_tabs, LAKE_FIELDS)
 
-    def _populate_field_tabs(self, prefix: str, tab_widget: Any, spec: Tuple):
+    def populate_field_tabs(self, prefix: str, tab_widget: Any, spec: Tuple):
         registry = self.field_checkboxes[prefix]
         for tab_title, fields in spec:
             page = QtWidgets.QWidget()
