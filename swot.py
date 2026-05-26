@@ -486,10 +486,36 @@ class QSWOT:
         self.open_statistics_dialog(self.river_layer, "river")
 
     def open_lake_statistics(self):
-        layer = self.lake_poly_layer or self.lake_point_layer
-        self.open_statistics_dialog(layer, "lake")
+        # Lake layers are added lazily — only after their first matching
+        # feature batch arrives. Pick whichever actually made it into the
+        # project (prefer polygons, fall back to points).
+        if self._lake_poly_added:
+            layer = self.lake_poly_layer
+        elif self._lake_point_added:
+            layer = self.lake_point_layer
+        else:
+            layer = None
 
-    def open_statistics_dialog(self, layer, label):
+        # A lake search like "caspian" returns features for many physically
+        # separate lakes — computing stats across all of them mixed together
+        # is misleading. Require the user to pick the lake of interest first.
+        if layer is not None and QgsProject.instance().mapLayer(layer.id()):
+            if layer.selectedFeatureCount() == 0:
+                QMessageBox.information(
+                    self.dlg,
+                    "Select a lake first",
+                    "Lake fetches can return features for many separate lakes "
+                    "matching the search (e.g. 'caspian' returns Caspian Sea "
+                    f"<i>and</i> Caspian Lake). Open the <b>{layer.name()}</b> "
+                    "layer's attribute table, select the rows for the lake "
+                    "you want to analyze, then click <b>Lake Statistic</b> "
+                    "again.",
+                )
+                return
+
+        self.open_statistics_dialog(layer, "lake", default_subset='selected')
+
+    def open_statistics_dialog(self, layer, label, default_subset='all'):
         if layer is None or not QgsProject.instance().mapLayer(layer.id()):
             QMessageBox.information(
                 self.dlg,
@@ -498,7 +524,8 @@ class QSWOT:
                 f"Run a {label} fetch first, then open the statistics dialog.",
             )
             return
-        StatisticsDialog(layer, parent=self.dlg).exec_()
+        StatisticsDialog(layer, parent=self.dlg,
+                         default_subset=default_subset).exec_()
 
     def zoom_to_layer(self, layer):
         layer.updateExtents()

@@ -35,12 +35,16 @@ class StatisticsDialog(QDialog, FORM_CLASS):
     """Tabbed stats dialog for SWOT vector layers: time series + correlation,
     sharing a single Subset filter at the top."""
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, layer, parent=None, default_subset='all'):
+        """default_subset: 'all' or 'selected' — which radio is pre-checked."""
         super().__init__(parent)
         self.setupUi(self)
         self.layer = layer
         self.header_label.setText(f"Layer: {layer.name()}")
         self.setWindowTitle(f"Statistics — {layer.name()}")
+
+        if default_subset == 'selected':
+            self.selected_radio.setChecked(True)
 
         self._numeric_names = numeric_field_names(layer)
         self._all_names = all_field_names(layer)
