@@ -388,6 +388,40 @@ def field_type(name):
 _NUMERIC_TYPES = {QMetaType.Type.Double, QMetaType.Type.Int, QMetaType.Type.LongLong}
 _MISSING_SENTINELS = {'', 'no_data', 'NA', 'na', 'NaN', 'nan', 'null', 'None'}
 
+# Hydrocron writes these integer values to numeric columns to mean "no data"
+# (see podaac/hydrocron swot_shp.py:obscure_data). They reach us as real
+# floats and silently pollute correlations, time series, and statistics
+# unless we strip them on the way in.
+_NUMERIC_FILL_INTEGERS = {-999, -99999999, -999999999999}
+# NetCDF / HDF5 default float _FillValue is 9.96921e+36 — anything that large
+# is a fill, not a measurement.
+_FILL_MAGNITUDE_THRESHOLD = 1e30
+
+
+def is_fill_value(value):
+    """True if `value` is a Hydrocron/NetCDF 'no data' sentinel numeric.
+
+    Covers:
+      - the Hydrocron integer fills (-999, -99999999, -999999999999),
+        matched after rounding so floats with small noise are caught too
+      - NetCDF-style magnitude fills (e.g. 9.96921e+36)
+      - NaN / ±inf
+    Returns False for strings, None, and any non-numeric input.
+    """
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return False
+    if v != v:  # NaN
+        return True
+    if v == float('inf') or v == float('-inf'):
+        return True
+    if abs(v) > _FILL_MAGNITUDE_THRESHOLD:
+        return True
+    return int(round(v)) in _NUMERIC_FILL_INTEGERS
+
 
 def coerce_value(name, value):
     """Convert a raw Hydrocron property value to something the QGIS field for
@@ -397,6 +431,8 @@ def coerce_value(name, value):
       - the SWOT-side 'no_data' / 'NaN' / '' sentinel,
       - a ';'-joined merged-observation value (e.g. 'overlap' = '76;1' across
         two PLD lakes — no single number applies),
+      - a Hydrocron numeric fill (-999, -99999999, -999999999999) or
+        NetCDF magnitude fill (e.g. 9.96921e+36) — see `is_fill_value`,
       - any string that isn't parseable to the target numeric type.
     String fields are passed through unchanged.
     """
@@ -406,6 +442,8 @@ def coerce_value(name, value):
     if qt not in _NUMERIC_TYPES:
         return value
     if isinstance(value, (int, float)):
+        if is_fill_value(value):
+            return None
         return value
     if not isinstance(value, str):
         return None
@@ -413,8 +451,9 @@ def coerce_value(name, value):
     if s in _MISSING_SENTINELS or ';' in s:
         return None
     try:
-        if qt == QMetaType.Type.Double:
-            return float(s)
-        return int(s)  # Int / LongLong
+        parsed = float(s) if qt == QMetaType.Type.Double else int(s)
     except (ValueError, TypeError):
         return None
+    if is_fill_value(parsed):
+        return None
+    return parsed

@@ -15,6 +15,8 @@ import numpy as np
 from qgis.PyQt.QtCore import QMetaType
 from qgis.core import QgsFeatureRequest
 
+from .swot_fields import is_fill_value
+
 
 NUMERIC_QMETA_TYPES = {
     QMetaType.Type.Double,
@@ -58,7 +60,7 @@ def _coerce_float(value):
     if hasattr(value, 'isNull') and callable(value.isNull) and value.isNull():
         return None
     if isinstance(value, (int, float)):
-        if isinstance(value, float) and np.isnan(value):
+        if is_fill_value(value):
             return None
         return float(value)
     if isinstance(value, str):
@@ -68,9 +70,10 @@ def _coerce_float(value):
         if ';' in s:
             return None
         try:
-            return float(s)
+            v = float(s)
         except ValueError:
             return None
+        return None if is_fill_value(v) else v
     return None
 
 
@@ -87,8 +90,10 @@ def parse_time(value):
     if hasattr(value, 'isNull') and callable(value.isNull) and value.isNull():
         return None
     if isinstance(value, (int, float)):
+        if is_fill_value(value):
+            return None
         v = float(value)
-        if np.isnan(v) or not np.isfinite(v) or abs(v) > _MAX_SWOT_SECONDS:
+        if abs(v) > _MAX_SWOT_SECONDS:
             return None
         try:
             return SWOT_EPOCH + timedelta(seconds=v)
