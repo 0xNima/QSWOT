@@ -74,16 +74,26 @@ def _coerce_float(value):
     return None
 
 
+_MAX_SWOT_SECONDS = 5e9  # ~158 years from 2000 — anything beyond is fill/junk
+
+
 def parse_time(value):
-    """SWOT epoch seconds (numeric) or ISO 8601 (string) → datetime, or None."""
+    """SWOT epoch seconds (numeric) or ISO 8601 (string) → datetime, or None.
+
+    Returns None for NaN/NULL, NetCDF-style fill values (e.g. 9.96921e+36),
+    or strings that don't parse. Never raises."""
     if value is None:
         return None
     if hasattr(value, 'isNull') and callable(value.isNull) and value.isNull():
         return None
     if isinstance(value, (int, float)):
-        if isinstance(value, float) and np.isnan(value):
+        v = float(value)
+        if np.isnan(v) or not np.isfinite(v) or abs(v) > _MAX_SWOT_SECONDS:
             return None
-        return SWOT_EPOCH + timedelta(seconds=float(value))
+        try:
+            return SWOT_EPOCH + timedelta(seconds=v)
+        except (OverflowError, ValueError):
+            return None
     if isinstance(value, str):
         s = value.strip()
         if not s or s.lower() in ('no_data', 'na', 'nan'):
