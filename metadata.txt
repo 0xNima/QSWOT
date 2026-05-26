@@ -26,7 +26,7 @@ hasProcessingProvider=no
 tags=flood, flow, hydraulics, network, network analysis, remote sensing, statistics
 
 homepage=https://github.com/0xNima/QSWOT
-category=Plugins
+category=Web
 icon=icon.png
 # experimental flag
 experimental=True
