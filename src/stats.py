@@ -151,12 +151,14 @@ def compute_correlation(xs, ys, method='pearson'):
             )
         return float(np.corrcoef(xs, ys)[0, 1]), float('nan'), n
 
-    fn = {
+    fns = {
         'pearson': scipy_stats.pearsonr,
         'spearman': scipy_stats.spearmanr,
         'kendall': scipy_stats.kendalltau,
-    }[method]
-    result = fn(xs, ys)
+    }
+    if method not in fns:
+        raise ValueError(f"Unknown correlation method: {method!r}")
+    result = fns[method](xs, ys)
     r = float(getattr(result, 'statistic', result[0]))
     p = float(getattr(result, 'pvalue', result[1]))
     return r, p, n
