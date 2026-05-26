@@ -38,8 +38,6 @@ hydrology data - river reaches and lakes - directly from
     - Windows (OSGeo4W shell): `pip install scipy`
     - macOS (official QGIS): `/Applications/QGIS.app/Contents/MacOS/bin/pip3 install scipy`
     - Linux: `pip3 install --user scipy`
-    - General guide for Windows:
-      <https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/>
 - **Network access** to:
   - `https://soto.podaac.earthdatacloud.nasa.gov` (Hydrocron timeseries)
   - `https://fts.podaac.earthdata.nasa.gov` (river reach ID lookup)
