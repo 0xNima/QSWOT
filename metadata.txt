@@ -1,47 +1,55 @@
-# This file contains metadata for your plugin.
-
-# This file should be included when you package your plugin.# Mandatory items:
+# Plugin metadata. Must be packaged with the plugin.
 
 [general]
 name=QSWOT
 qgisMinimumVersion=3.0
-description=Plugin for loading SWOT data
+description=Discover, download, visualize, and analyze SWOT satellite hydrology data (river reaches and lakes) from NASA PO.DAAC's Hydrocron API.
 version=0.1
 author=Nima Asadi
 email=nima.asadi.edu@gmail.com
 
-about=Provide a brief description of the plugin and its purpose.
+about=QSWOT lets you search for SWOT (Surface Water and Ocean Topography)
+ river reaches and lakes by name, fetch their time-series measurements from
+ NASA PO.DAAC's Hydrocron API, stream the results into styled QGIS layers,
+ and run correlation / time-series analyses on the resulting attributes.
+ .
+ Requires QGIS 3.0+. Bundled Python packages used: numpy and matplotlib
+ (both ship with standard QGIS installs). scipy is optional and only
+ needed for Spearman / Kendall correlations; Pearson works without it.
+ To install scipy into QGIS's Python on Windows, see:
+ https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/
+ .
+ Network access required to soto.podaac.earthdatacloud.nasa.gov,
+ fts.podaac.earthdata.nasa.gov, and lakes.swot-lake.workers.dev. The
+ plugin uses QgsNetworkAccessManager so QGIS proxy and SSL settings are
+ honored automatically.
+ .
+ Coverage is global but only where SWOT has observed; data starts from
+ late 2022 (SWOT operational launch). Source code and issue tracker on
+ GitHub.
 
 tracker=https://github.com/0xNima/QSWOT/issues
 repository=https://github.com/0xNima/QSWOT
+homepage=https://github.com/0xNima/QSWOT
 # End of mandatory metadata
 
 # Recommended items:
 
 hasProcessingProvider=no
-# Uncomment the following line and add your changelog:
 # changelog=
 
 # Tags are comma separated with spaces allowed
 tags=swot, hydrocron, altimetry, satellite altimetry, nasa, podaac, cnes, hydrology, hydraulics, rivers, lakes, water level, water surface elevation, discharge, time series, correlation, remote sensing, earth observation, statistics, web service
 
-homepage=https://github.com/0xNima/QSWOT
 category=Web
 icon=icon.png
-# experimental flag
-experimental=True
 
-# deprecated flag (applies to the whole plugin, not just a single version)
+experimental=True
 deprecated=False
 
 # Since QGIS 3.8, a comma separated list of plugins to be installed
-# (or upgraded) can be specified.
-# Check the documentation for more information.
+# (or upgraded) can be specified. See QGIS docs.
 # plugin_dependencies=
-
-Category of the plugin: Raster, Vector, Database or Web
-# category=
 
 # If the plugin can run on QGIS Server.
 server=False
-

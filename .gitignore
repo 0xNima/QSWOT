@@ -1,3 +1,17 @@
-.idea
-.claude
-src/__pycache__/
+# Python bytecode caches
+__pycache__/
+*.pyc
+*.pyo
+
+# OS / IDE
+.DS_Store
+__MACOSX/
+.idea/
+.vscode/
+.claude/
+*.swp
+*~
+
+# QGIS plugin builder leftovers (generated at build time, not committed)
+*.qmlc
+*.shp.xml
