@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="river_tab">
     <attribute name="title">
@@ -351,6 +351,9 @@
       </property>
      </widget>
      <widget class="QSpinBox" name="lake_fetch_manual">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>100</x>
