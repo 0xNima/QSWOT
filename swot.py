@@ -204,26 +204,29 @@ class QSWOT:
 
 
     def run(self):
-        if self.first_start == True:
+        if self.first_start:
             self.first_start = False
             self.dlg = QSWOTDialog()
+            # Connect signals once — calling run() repeatedly would otherwise
+            # stack duplicate connections and each click would fire N times.
+            self.dlg.river_fetch_all.toggled.connect(
+                partial(self.on_fetch_all_changed, 'river')
+            )
+            self.dlg.lake_fetch_all.toggled.connect(
+                partial(self.on_fetch_all_changed, 'lake')
+            )
+            self.dlg.river_statistics_btn.clicked.connect(self.open_river_statistics)
+            self.dlg.river_lake_btn.clicked.connect(self.open_lake_statistics)
 
         self.set_defaults()
-        self.dlg.river_fetch_all.toggled.connect(
-            partial(self.on_fetch_all_changed, 'river')
-        )
-        self.dlg.lake_fetch_all.toggled.connect(
-            partial(self.on_fetch_all_changed, 'lake')
-        )
-        self.dlg.river_statistics_btn.clicked.connect(self.open_river_statistics)
-        self.dlg.river_lake_btn.clicked.connect(self.open_lake_statistics)
-
-        self.dlg.show()
 
         feature_types = 0
         river = 2
         lake = 4
 
+        # exec_() alone handles showing the dialog modally. A preceding show()
+        # would render it non-modally first, causing the close button to
+        # require two or three clicks to actually dismiss the dialog.
         if self.dlg.exec_():
             river_name = self.dlg.river_name.text()
             lake_name = self.dlg.lake_name.text()
